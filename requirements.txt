@@ -1,0 +1,8 @@
+flask
+gevent
+redispy
+sqlalchemy
+flask-security
+psycopg2-binary
+pydantic
+gunicorn
