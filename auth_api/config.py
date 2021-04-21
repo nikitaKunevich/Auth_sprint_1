@@ -7,8 +7,9 @@ class Settings(BaseSettings):
     POSTGRES_URI: str = "postgresql://postgres@127.0.0.1:5432/auth"
     DEBUG: bool = False
     SECRET_KEY: str
-    SECURITY_PASSWORD_SALT: str
-    JSONIFY_PRETTYPRINT_REGULAR: bool = True
+
+    JWT_PRIVATE_KEY: str
+    JWT_PUBLIC_KEY: str
 
 
 config = Settings()

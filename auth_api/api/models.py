@@ -1,37 +1,64 @@
-from enum import Enum
-from typing import Literal, Union
+import datetime
+from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field, SecretStr
+from flask import current_app
+from pydantic import BaseModel, EmailStr, Field, SecretStr, root_validator, validator
 
-from blocks import guard
+
+def password_field_factory():
+    return Field(min_length=8, max_length=100)
 
 
 class UserIn(BaseModel):
     email: EmailStr
-    password: SecretStr = Field(min_length=8, max_length=100)
+    password: SecretStr = password_field_factory()
 
 
-class GrantTypes(str, Enum):
-    PASSWORD = "password"
-    REFRESH_TOKEN = "refresh_token"
+class UserPatchIn(BaseModel):
+    email: Optional[EmailStr]
+    new_password_1: Optional[SecretStr] = password_field_factory()
+    new_password_2: Optional[SecretStr] = password_field_factory()
+
+    @root_validator
+    def one_of(cls, values):
+        if not (
+            values.get("email")
+            or (values.get("new_password_1") and values.get("new_password_2"))
+        ):
+            raise ValueError("at least one value should be present.")
+        return values
+
+    @validator("new_password_2")
+    def passwords_match(cls, v, values, **kwargs):
+        if "new_password_1" in values and v != values["new_password_1"]:
+            raise ValueError("passwords do not match")
+        return v
 
 
-class TokenInBase(BaseModel):
-    grant_type: GrantTypes = Field(alias="grantType")
+class UserInfoOut(BaseModel):
+    id: str
+    email: str
+    registered_at: datetime.datetime
+
+    active: bool
+    roles: list
+
+
+class UserLoginRecord(BaseModel):
+    user_agent: str
+    platform: Optional[str]
+    browser: Optional[str]
+    timestamp: datetime.datetime
+    ip: str
+
+
+class UserLoginRecordsOut(BaseModel):
+    logins: list[UserLoginRecord]
 
 
 class TokenInPassword(BaseModel):
     email: EmailStr
     password: SecretStr
-    grant_type: Literal[GrantTypes.PASSWORD]
-
-
-class TokenInRefresh(BaseModel):
-    refresh_token: str
-    grant_type: Literal[GrantTypes.REFRESH_TOKEN]
-
-
-TokenIn = Union[TokenInPassword, TokenInRefresh]
 
 
 class TokenRevokeIn(BaseModel):
@@ -41,5 +68,7 @@ class TokenRevokeIn(BaseModel):
 class TokenGrantOut(BaseModel):
     access_token: str
     refresh_token: str
-    token_type: str = 'bearer'
-    expires: int = Field(default_factory=lambda: int(guard.access_lifespan.total_seconds()))
+    token_type: str = "bearer"
+    expires: int = Field(
+        default_factory=lambda: current_app.config["JWT_ACCESS_TOKEN_EXPIRES"]
+    )

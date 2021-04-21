@@ -2,7 +2,7 @@ version: "3.8"
 
 x-env: &x-env
   env_file:
-    - deploys/dev.env
+    - deploys/${ENVFILE:-compose}.env
 
 services:
   auth_api:
@@ -24,7 +24,6 @@ services:
       POSTGRES_PASSWORD: devpass
     volumes:
       - postgresdb:/var/lib/postgresql/data
-      - ./postgres_init:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
 

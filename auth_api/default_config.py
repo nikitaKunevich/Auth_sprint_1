@@ -1,5 +1,6 @@
 class DefaultConfig:
-    JWT_ACCESS_LIFESPAN = {"minutes": 15}
-    JWT_REFRESH_LIFESPAN = {"days": 30}
-    PRAETORIAN_HASH_SCHEME = "argon2"
-    JWT_PLACES = ["header"]
+    JWT_ACCESS_TOKEN_EXPIRES = 15 * 60
+    JWT_REFRESH_TOKEN_EXPIRES = 30 * 24 * 60 * 60
+    JWT_ALGORITHM = "RS256"
+
+    JSONIFY_PRETTYPRINT_REGULAR: bool = True
