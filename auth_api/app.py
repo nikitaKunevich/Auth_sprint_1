@@ -42,7 +42,7 @@ def create_app():
     def startup():
         db.init_db()
 
-    @app.after_request
+    @app.teardown_appcontext
     def after_request(response):
         db.session.remove()
         return response

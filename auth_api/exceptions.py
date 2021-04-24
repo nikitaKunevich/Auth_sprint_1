@@ -4,7 +4,7 @@ from werkzeug.exceptions import BadRequest, HTTPException, Unauthorized
 
 
 class RequestValidationError(HTTPException):
-    code = 422
+    code = 400
 
     def __init__(self, e: ValidationError):
         self.response = Response(status=self.code, response=str(e))

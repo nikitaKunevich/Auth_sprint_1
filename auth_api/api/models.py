@@ -16,8 +16,8 @@ class UserIn(BaseModel):
 
 class UserPatchIn(BaseModel):
     email: Optional[EmailStr]
-    new_password_1: Optional[SecretStr] = password_field_factory()
-    new_password_2: Optional[SecretStr] = password_field_factory()
+    new_password_1: Optional[SecretStr]
+    new_password_2: Optional[SecretStr]
 
     @root_validator
     def one_of(cls, values):
