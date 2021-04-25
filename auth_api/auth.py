@@ -3,11 +3,10 @@ from typing import Optional
 
 from flask_jwt_extended import create_access_token, create_refresh_token, decode_token
 from passlib.hash import argon2
-from sqlalchemy.exc import IntegrityError
 from werkzeug.useragents import UserAgent
 
 import token_store
-from exceptions import PasswordAuthenticationError
+from exceptions import AlreadyExistsError, PasswordAuthenticationError
 from storage import db
 from storage.db_models import LoginRecord, User
 
@@ -23,14 +22,15 @@ def hash_password(password: str) -> str:
 
 
 def create_user(email: str, password: str) -> Optional[User]:
+    # checking if user already exists
+    user_exists = User.get_user_universal(email) is not None
+    if user_exists:
+        raise AlreadyExistsError(f"User {email} already exists")
+
     hashed_pass = hash_password(password)
     user = User(email=email, hashed_password=hashed_pass)
     db.session.add(user)
-    try:
-        db.session.commit()
-    except IntegrityError:
-        db.session.rollback()
-        raise
+    db.session.commit()
     return user
 
 

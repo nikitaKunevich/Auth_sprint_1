@@ -1,6 +1,5 @@
 import logging
 
-import sqlalchemy.exc
 from flask import Blueprint, jsonify, make_response, request, url_for
 from flask_jwt_extended import current_user, get_jwt, jwt_required
 from werkzeug.exceptions import Forbidden
@@ -14,7 +13,6 @@ from api.models import (
     UserLoginRecordsOut,
     UserPatchIn,
 )
-from exceptions import AlreadyExistsError
 from storage import db
 from storage.db_models import LoginRecord
 from utils import parse_obj_raise
@@ -56,11 +54,8 @@ def create_user():
     """
     logger.debug("registration")
     user_data = parse_obj_raise(UserIn, request.get_json())
-    try:
-        logger.info(f"user with email: {user_data.email}")
-        user = auth.create_user(user_data.email, user_data.password.get_secret_value())
-    except sqlalchemy.exc.IntegrityError:
-        raise AlreadyExistsError(f"User {user_data.email} already exists")
+    logger.info(f"user with email: {user_data.email}")
+    user = auth.create_user(user_data.email, user_data.password.get_secret_value())
     resp = make_response("Created", 201)
     resp.headers["Location"] = f"{url_for('.create_user')}/{user.id}"
     return resp
@@ -146,18 +141,14 @@ def change_user_info(user_id):
 
     patch_data = parse_obj_raise(UserPatchIn, request.get_json())
 
-    try:
-        if patch_data.email:
-            current_user.email = patch_data.email
-            db.session.add(current_user)
-        if patch_data.new_password_1:
-            current_user.hashed_password = auth.hash_password(
-                patch_data.new_password_1.get_secret_value()
-            )
-            db.session.add(current_user)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
+    if patch_data.email:
+        current_user.email = patch_data.email
+    if patch_data.new_password_1:
+        current_user.hashed_password = auth.hash_password(
+            patch_data.new_password_1.get_secret_value()
+        )
+    db.session.add(current_user)
+    db.session.commit()
     return "OK", 200
 
 
